@@ -4,7 +4,7 @@ name: Deploy Next.js to GitHub Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["main"] # Change this to your default branch if it's not 'main'
+    branches: ["master"] # Change this to your default branch if it's not 'main'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
