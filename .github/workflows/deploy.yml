@@ -1,0 +1,70 @@
+# GitHub Actions workflow to deploy Next.js app to GitHub Pages
+name: Deploy Next.js to GitHub Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"] # Change this to your default branch if it's not 'main'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Specify your project's Node.js version
+          cache: "npm" # Or 'yarn' if you use Yarn
+
+      - name: Install dependencies
+        run: npm ci # Or 'yarn install --frozen-lockfile'
+
+      - name: Build Next.js application
+        run: npm run build
+        # If you've configured basePath in next.config.js using an environment variable,
+        # pass it here. For example, if your basePath is set like `basePath: process.env.NEXT_PUBLIC_BASE_PATH`,
+        # you would add:
+        # env:
+        #   NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        # This is necessary if your site is at <username>.github.io/<repository-name>
+        # and not <username>.github.io
+
+      - name: Create .nojekyll file
+        # Prevents GitHub Pages from running the output files through Jekyll.
+        run: touch ./out/.nojekyll
+
+      - name: Upload artifact
+        # Automatically uploads an artifact from the './out' directory ready to be deployed.
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # Sets the URL for the GitHub Pages deployment
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # This action handles the deployment
+                                      # No need to specify path, it uses the artifact from the 'build' job.
