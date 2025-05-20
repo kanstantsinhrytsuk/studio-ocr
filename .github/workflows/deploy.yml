@@ -39,13 +39,8 @@ jobs:
 
       - name: Build Next.js application
         run: npm run build
-        # If you've configured basePath in next.config.js using an environment variable,
-        # pass it here. For example, if your basePath is set like `basePath: process.env.NEXT_PUBLIC_BASE_PATH`,
-        # you would add:
-        # env:
-        #   NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
-        # This is necessary if your site is at <username>.github.io/<repository-name>
-        # and not <username>.github.io
+        env:
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
 
       - name: Create .nojekyll file
         # Prevents GitHub Pages from running the output files through Jekyll.

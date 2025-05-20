@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   //    under the 'Build Next.js app' step, add `env: { NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}" }`
   //    (Ensure the env var name matches what you use here).
   //
-  // basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   //
   // Note: If you enable basePath, ensure any direct links or image src attributes in your code
   // that don't use Next.js components (like `<Link>` or `<Image>`) are manually prefixed with the basePath.
