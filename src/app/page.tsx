@@ -11,9 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from "@/hooks/use-toast";
-// Removed AI flow imports as they are Server Actions
-// import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
-// import { validateAndFormatText } from '@/ai/flows/validate-and-format-text';
+import { extractTextFromImage, ExtractTextFromImageOutput } from '@/ai/flows/extract-text-from-image';
+import { validateAndFormatText, ValidateAndFormatTextOutput } from '@/ai/flows/validate-and-format-text';
 import { FileImage, Braces, FileJson2, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 
 export default function SchemaReaderPage() {
@@ -58,23 +57,54 @@ export default function SchemaReaderPage() {
     setGeneralError(null);
     setOutputError(null);
     setFormattedJson(null);
-    setCurrentProcessStep('ocr');
-    toast({ title: "Processing...", description: "Simulating AI processing..." });
+    
+    try {
+      setCurrentProcessStep('ocr');
+      toast({ title: "Extracting Text...", description: "AI is processing the image." });
+      
+      const ocrResponse: ExtractTextFromImageOutput = await extractTextFromImage({ photoDataUri });
 
-    // Simulate AI processing for static deployment
-    setTimeout(() => {
+      if (!ocrResponse || !ocrResponse.extractedText) {
+        const errorMsg = "Failed to extract text from the image. The AI returned no text.";
+        setOutputError(errorMsg);
+        toast({ title: "OCR Error", description: errorMsg, variant: "destructive" });
+        setIsLoading(false);
+        setCurrentProcessStep(null);
+        return;
+      }
+      
+      toast({ title: "Text Extracted!", description: "Now validating against your schema." });
       setCurrentProcessStep('validation');
-      const simulatedOutput = {
-        message: "AI features (OCR and validation) are not available in this static deployment.",
-        note: "This is placeholder data because the application is running in a static environment (e.g., GitHub Pages) that does not support server-side AI processing.",
-        providedSchema: jsonSchema ? "Schema was provided by user." : "No schema provided by user.",
-        imageProvided: photoDataUri ? "Image was provided." : "No image provided."
-      };
-      setFormattedJson(JSON.stringify(simulatedOutput, null, 2));
-      toast({ title: "Static Mode", description: "AI features simulated. Full functionality requires a server environment.", variant: "default" });
+      
+      const validationResponse: ValidateAndFormatTextOutput = await validateAndFormatText({ 
+        extractedText: ocrResponse.extractedText, 
+        jsonSchema 
+      });
+
+      if (!validationResponse || !validationResponse.formattedJson) {
+        const errorMsg = "Failed to validate or format the JSON. The AI returned no formatted JSON.";
+        setOutputError(errorMsg);
+        setFormattedJson(JSON.stringify({ 
+            message: "Validation failed. Extracted text shown below.",
+            extractedText: ocrResponse.extractedText,
+            schemaProvided: jsonSchema ? "Schema was provided." : "No schema provided."
+        }, null, 2));
+        toast({ title: "Validation/Format Error", description: errorMsg, variant: "destructive" });
+      } else {
+        setFormattedJson(validationResponse.formattedJson);
+        toast({ title: "Success!", description: "Image processed and JSON formatted successfully." });
+      }
+
+    } catch (error: any) {
+      console.error("Error during AI processing:", error);
+      const errorMessage = error.message || "An unexpected error occurred during AI processing.";
+      setGeneralError(errorMessage); 
+      setOutputError(errorMessage); 
+      toast({ title: "AI Processing Error", description: errorMessage, variant: "destructive" });
+    } finally {
       setIsLoading(false);
       setCurrentProcessStep(null);
-    }, 1500);
+    }
   };
 
   return (
@@ -105,7 +135,7 @@ export default function SchemaReaderPage() {
             <Card className="shadow-lg rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><Braces className="w-6 h-6 text-primary" /> JSON Schema</CardTitle>
-                <CardDescription>Paste your JSON schema (used for simulated output in static mode).</CardDescription>
+                <CardDescription>Paste your JSON schema for validation and formatting.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SchemaInputForm jsonSchema={jsonSchema} onJsonSchemaChange={setJsonSchema} disabled={isLoading} />
@@ -126,7 +156,7 @@ export default function SchemaReaderPage() {
               ) : (
                 <>
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Process (Simulated)
+                  Process Image & Validate Schema
                 </>
               )}
             </Button>
@@ -144,7 +174,7 @@ export default function SchemaReaderPage() {
             <Card className="shadow-lg rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><FileJson2 className="w-6 h-6 text-primary" /> Formatted JSON Output</CardTitle>
-                <CardDescription>Simulated output based on your input (AI features disabled in static mode).</CardDescription>
+                <CardDescription>The AI-processed and validated JSON will appear here.</CardDescription>
               </CardHeader>
               <CardContent>
                 <JsonDisplay 
