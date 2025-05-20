@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle2, AlertTriangle, Copy, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Copy, Loader2, FileJson2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface JsonDisplayProps {
