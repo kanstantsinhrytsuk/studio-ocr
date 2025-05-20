@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -10,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from "@/hooks/use-toast";
-import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
-import { validateAndFormatText } from '@/ai/flows/validate-and-format-text';
+// Removed AI flow imports as they are Server Actions
+// import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
+// import { validateAndFormatText } from '@/ai/flows/validate-and-format-text';
 import { FileImage, Braces, FileJson2, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 
 export default function SchemaReaderPage() {
@@ -22,8 +24,8 @@ export default function SchemaReaderPage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [currentProcessStep, setCurrentProcessStep] = useState<'ocr' | 'validation' | null>(null);
-  const [generalError, setGeneralError] = useState<string | null>(null); // For errors not specific to output
-  const [outputError, setOutputError] = useState<string | null>(null); // For errors specifically related to the JSON output stage
+  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [outputError, setOutputError] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -56,46 +58,23 @@ export default function SchemaReaderPage() {
     setGeneralError(null);
     setOutputError(null);
     setFormattedJson(null);
+    setCurrentProcessStep('ocr');
+    toast({ title: "Processing...", description: "Simulating AI processing..." });
 
-    try {
-      // Step 1: OCR
-      setCurrentProcessStep('ocr');
-      toast({ title: "Processing...", description: "Extracting text from image..." });
-      const ocrResult = await extractTextFromImage({ photoDataUri });
-      const extractedText = ocrResult.extractedText;
-
-      if (!extractedText || !extractedText.trim()) {
-        setOutputError("No text could be extracted from the image.");
-        toast({ title: "OCR Result", description: "No text could be extracted from the image."});
-        setIsLoading(false);
-        setCurrentProcessStep(null);
-        return;
-      }
-      toast({ title: "OCR Success", description: "Text extracted. Validating with schema..." });
-
-      // Step 2: Validate and Format
+    // Simulate AI processing for static deployment
+    setTimeout(() => {
       setCurrentProcessStep('validation');
-      const validationResult = await validateAndFormatText({
-        extractedText,
-        jsonSchema,
-      });
-      setFormattedJson(validationResult.formattedJson);
-      toast({ title: "Success!", description: "Data validated and formatted." });
-
-    } catch (e: any) {
-      console.error("AI processing error:", e);
-      const errorMessage = e.message || "An unexpected error occurred during AI processing.";
-      if (currentProcessStep === 'ocr') {
-        setGeneralError(`OCR Error: ${errorMessage}`);
-      } else {
-        setOutputError(`Validation Error: ${errorMessage}`);
-      }
-      setFormattedJson(null); // Clear any potentially partial/old JSON
-      toast({ title: "Processing Error", description: errorMessage, variant: "destructive" });
-    } finally {
+      const simulatedOutput = {
+        message: "AI features (OCR and validation) are not available in this static deployment.",
+        note: "This is placeholder data because the application is running in a static environment (e.g., GitHub Pages) that does not support server-side AI processing.",
+        providedSchema: jsonSchema ? "Schema was provided by user." : "No schema provided by user.",
+        imageProvided: photoDataUri ? "Image was provided." : "No image provided."
+      };
+      setFormattedJson(JSON.stringify(simulatedOutput, null, 2));
+      toast({ title: "Static Mode", description: "AI features simulated. Full functionality requires a server environment.", variant: "default" });
       setIsLoading(false);
       setCurrentProcessStep(null);
-    }
+    }, 1500);
   };
 
   return (
@@ -108,7 +87,7 @@ export default function SchemaReaderPage() {
             <Card className="shadow-lg rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><FileImage className="w-6 h-6 text-primary" /> Image Input</CardTitle>
-                <CardDescription>Upload an image or provide a URL to extract text.</CardDescription>
+                <CardDescription>Upload an image or provide a URL.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ImageInputForm onImageReady={handleImageProcessed} isProcessing={isLoading && currentProcessStep === 'ocr'} />
@@ -126,7 +105,7 @@ export default function SchemaReaderPage() {
             <Card className="shadow-lg rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><Braces className="w-6 h-6 text-primary" /> JSON Schema</CardTitle>
-                <CardDescription>Paste your JSON schema to validate and format the extracted text.</CardDescription>
+                <CardDescription>Paste your JSON schema (used for simulated output in static mode).</CardDescription>
               </CardHeader>
               <CardContent>
                 <SchemaInputForm jsonSchema={jsonSchema} onJsonSchemaChange={setJsonSchema} disabled={isLoading} />
@@ -147,7 +126,7 @@ export default function SchemaReaderPage() {
               ) : (
                 <>
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Extract & Validate
+                  Process (Simulated)
                 </>
               )}
             </Button>
@@ -165,12 +144,12 @@ export default function SchemaReaderPage() {
             <Card className="shadow-lg rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><FileJson2 className="w-6 h-6 text-primary" /> Formatted JSON Output</CardTitle>
-                <CardDescription>The extracted text, validated and formatted according to your schema.</CardDescription>
+                <CardDescription>Simulated output based on your input (AI features disabled in static mode).</CardDescription>
               </CardHeader>
               <CardContent>
                 <JsonDisplay 
                   formattedJson={formattedJson} 
-                  isLoading={isLoading && (currentProcessStep === 'validation' || (currentProcessStep === 'ocr' && !outputError) ) } // Show loading for validation, or OCR if no immediate OCR error
+                  isLoading={isLoading && (currentProcessStep === 'validation' || (currentProcessStep === 'ocr' && !outputError) ) }
                   error={outputError} 
                 />
               </CardContent>
